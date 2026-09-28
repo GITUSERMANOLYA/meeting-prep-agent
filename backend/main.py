@@ -7,14 +7,22 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-import llm      
-import memory   
+# Fixed relative import paths for project root uvicorn execution
+from backend import llm, memory  
 
 log = logging.getLogger("meeting-prep")
 app = FastAPI(title="Meeting Prep Agent")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-MAX_NOTES_CHARS = 20000
+# Confirmed wide-open CORS configuration to prevent blocking the UI (#5)
+app.add_middleware(
+    CORSMiddleware, 
+    allow_origins=["*"], 
+    allow_methods=["*"], 
+    allow_headers=["*"]
+)
+
+# Unified note truncation limit to match llm.py exactly
+MAX_NOTES_CHARS = 12000
 
 NO_HISTORY = {
     "critical_alerts": [],
@@ -60,7 +68,10 @@ def log_meeting(req: LogMeeting):
         raise HTTPException(400, "contact_name is required")
     if not notes:
         raise HTTPException(400, "notes are empty")
+    
+    # Strictly bound to 12,000 characters
     notes = notes[:MAX_NOTES_CHARS]
+    
     try:
         extracted = llm.extract(notes)
     except Exception as e:
@@ -72,7 +83,6 @@ def log_meeting(req: LogMeeting):
         log.exception("retain failed")
         raise HTTPException(502, f"Saving to memory failed: {e}")
     
-    # Updated status string to match CONTRACT.md single source of truth
     return {"status": "success", "extracted": extracted}
 
 
@@ -103,6 +113,4 @@ def log_outcome(req: LogOutcome):
     except Exception as e:
         log.exception("log-outcome failed")
         raise HTTPException(502, f"Saving outcome failed: {e}")
-        
-    # Updated status string to match CONTRACT.md single source of truth
     return {"status": "success"}
