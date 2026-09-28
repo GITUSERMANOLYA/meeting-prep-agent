@@ -1,52 +1,52 @@
 [
-  {
-    "contact_name": "Sarah Jenkins",
-    "notes": "Met with Sarah to discuss the analytics proposal. She was positive about the approach and asked us to send a detailed proposal by Friday. We agreed to send it."
-  },
-  {
-    "contact_name": "Sarah Jenkins",
-    "notes": "Followed up with Sarah about the analytics proposal. She said she still had not received it and asked when she could expect it. We apologized and promised to send the proposal by Monday. She seemed slightly disappointed but remained interested."
-  },
-  {
-    "contact_name": "Sarah Jenkins",
-    "notes": "Sarah followed up again because the proposal still had not been sent. She expressed frustration about the delay and said the missing proposal was making it difficult for her to plan internally. We apologized and promised to send it the next day."
-  },
-  {
-    "contact_name": "Sarah Jenkins",
-    "notes": "Sarah was noticeably frustrated about the proposal delay. She said this was the third time she had to ask about it and mentioned that another vendor had already shared their proposal. She said the repeated delays were making her lose confidence in us. We agreed to prioritize the proposal immediately."
-  },
+{
+"contact_name": "Sarah Jenkins",
+"notes": "On 2 Sep: Met with Sarah to discuss the analytics proposal. She was positive about the approach and asked us to send a detailed proposal by 5 Sep. We agreed to send it."
+},
+{
+"contact_name": "Sarah Jenkins",
+"notes": "On 9 Sep: Followed up with Sarah about the analytics proposal. She said she still had not received it and asked when she could expect it. We apologized and promised to send the proposal by 12 Sep. She seemed slightly disappointed but remained interested."
+},
+{
+"contact_name": "Sarah Jenkins",
+"notes": "On 16 Sep: Sarah followed up again because the proposal still had not been sent. She expressed frustration about the delay and said the missing proposal was making it difficult for her to plan internally. We apologized and promised to send it by 17 Sep."
+},
+{
+"contact_name": "Sarah Jenkins",
+"notes": "On 23 Sep: Sarah was noticeably frustrated about the proposal delay. She said this was the third time she had to ask about it and mentioned that another vendor had already shared their proposal. She said the repeated delays were making her lose confidence in us. She also mentioned that her budget is under review, and that Acme Analytics had already sent their proposal. We agreed to prioritize the proposal immediately."
+},
 
-  {
-    "contact_name": "Michael Chen",
-    "notes": "Met with Michael to discuss the analytics dashboard requirements. He was enthusiastic about the project and explained that his team mainly needs visibility into weekly sales and customer retention. We agreed to send a dashboard mockup by Wednesday."
-  },
-  {
-    "contact_name": "Michael Chen",
-    "notes": "Reviewed the dashboard mockup with Michael. He liked the overall design and requested a small change to the retention chart. We agreed to make the change and send the updated version by Friday. Michael said the project was progressing well."
-  },
-  {
-    "contact_name": "Michael Chen",
-    "notes": "Presented the updated dashboard to Michael. The requested changes were completed and he approved the design. He said the dashboard would be useful for his team. We agreed to begin implementation next week."
-  },
-  {
-    "contact_name": "Michael Chen",
-    "notes": "Met with Michael to review the completed dashboard. He was happy with the result and confirmed that the key metrics were working as expected. He thanked the team for the quick turnaround. No outstanding issues or commitments were discussed."
-  },
+{
+"contact_name": "Michael Chen",
+"notes": "On 3 Sep: Met with Michael to discuss the analytics dashboard requirements. He was enthusiastic about the project and explained that his team mainly needs visibility into weekly sales and customer retention. We agreed to send a dashboard mockup by 7 Sep."
+},
+{
+"contact_name": "Michael Chen",
+"notes": "On 10 Sep: Reviewed the dashboard mockup with Michael. He liked the overall design and requested a small change to the retention chart. We agreed to make the change and send the updated version by 12 Sep. Michael said the project was progressing well."
+},
+{
+"contact_name": "Michael Chen",
+"notes": "On 17 Sep: Presented the updated dashboard to Michael. The requested changes were completed and he approved the design. He said the dashboard would be useful for his team. We agreed to begin implementation the following week."
+},
+{
+"contact_name": "Michael Chen",
+"notes": "On 24 Sep: Met with Michael to review the completed dashboard. He was happy with the result and confirmed that the key metrics were working as expected. He thanked the team for the quick turnaround. No outstanding issues or commitments were discussed."
+},
 
-  {
-    "contact_name": "Priya Sharma",
-    "notes": "Met with Priya to discuss a possible data integration project. She explained that her team currently combines data from several internal systems manually. She was interested in automating the process and asked us to investigate the available APIs."
-  },
-  {
-    "contact_name": "Priya Sharma",
-    "notes": "Discussed the API investigation with Priya. We found that two of the systems have usable APIs, while the third may require an alternative integration approach. Priya asked us to provide a short technical assessment next week."
-  },
-  {
-    "contact_name": "Priya Sharma",
-    "notes": "Reviewed the integration options with Priya. She was satisfied with the proposed approach but wanted clarification about implementation time and maintenance requirements. We agreed to provide estimated timelines before the next meeting."
-  },
-  {
-    "contact_name": "Priya Sharma",
-    "notes": "Followed up with Priya about the integration project. We discussed the estimated timeline and maintenance requirements. Priya said the approach looked reasonable and will discuss it with her technical team before making a decision."
-  }
+{
+"contact_name": "Priya Sharma",
+"notes": "On 4 Sep: Met with Priya to discuss a possible data integration project. She explained that her team currently combines data from several internal systems manually. She was interested in automating the process and asked us to investigate the available APIs."
+},
+{
+"contact_name": "Priya Sharma",
+"notes": "On 11 Sep: Discussed the API investigation with Priya. We found that two of the systems have usable APIs, while the third may require an alternative integration approach. Priya asked us to provide a short technical assessment by 18 Sep."
+},
+{
+"contact_name": "Priya Sharma",
+"notes": "On 18 Sep: Reviewed the integration options with Priya. She was satisfied with the proposed approach but wanted clarification about implementation time and maintenance requirements. We agreed to provide estimated timelines before the next meeting."
+},
+{
+"contact_name": "Priya Sharma",
+"notes": "On 25 Sep: Followed up with Priya about the integration project. We discussed the estimated timeline and maintenance requirements. Priya said the approach looked reasonable and will discuss it with her technical team before making a decision."
+}
 ]
