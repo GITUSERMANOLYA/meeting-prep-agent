@@ -1,1 +1,2460 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting Prep Agent</title>
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS & RESET
+       ============================================================ */
+    :root {
+      --bg-primary:    #070b14;
+      --bg-secondary:  #111827;
+      --bg-card:       rgba(19, 27, 43, 0.88);
+      --bg-card-hover: rgba(25, 35, 57, 0.96);
+      --border:        rgba(125, 145, 190, 0.16);
+      --border-light:  rgba(110, 130, 180, 0.28);
+
+      --accent-blue:   #4f8ef7;
+      --accent-violet: #8b5cf6;
+      --accent-teal:   #2dd4bf;
+      --accent-amber:  #f59e0b;
+      --accent-red:    #f87171;
+      --accent-green:  #4ade80;
+
+      --text-primary:  #e6edf3;
+      --text-secondary:#8b949e;
+      --text-muted:    #4d5b72;
+
+      --radius-sm:  6px;
+      --radius-md:  10px;
+      --radius-lg:  16px;
+
+      --shadow-card: 0 18px 45px rgba(0,0,0,0.34);
+      --shadow-glow: 0 0 30px rgba(79,142,247,0.16);
+
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background:
+        radial-gradient(circle at top left, rgba(79,142,247,0.16), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(139,92,246,0.15), transparent 24%),
+        radial-gradient(circle at 50% 100%, rgba(45,212,191,0.08), transparent 28%),
+        linear-gradient(180deg, #050810 0%, #070b14 46%, #09101b 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(26px);
+      z-index: 0;
+      opacity: 0.85;
+    }
+
+    body::before {
+      width: 440px;
+      height: 440px;
+      left: -180px;
+      top: 150px;
+      background: rgba(79, 142, 247, 0.14);
+    }
+
+    body::after {
+      width: 520px;
+      height: 520px;
+      right: -220px;
+      top: -120px;
+      background: rgba(139, 92, 246, 0.12);
+    }
+
+    main, nav { position: relative; z-index: 1; }
+
+    /* ============================================================
+       UTILITY CLASSES
+       ============================================================ */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
+    }
+
+    .hidden { display: none !important; }
+
+    .text-accent  { color: var(--accent-blue); }
+    .text-violet  { color: var(--accent-violet); }
+    .text-muted   { color: var(--text-secondary); }
+    .text-success { color: var(--accent-green); }
+    .text-danger  { color: var(--accent-red); }
+    .text-warning { color: var(--accent-amber); }
+
+    /* ============================================================
+       TOP NAVIGATION
+       ============================================================ */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7, 11, 20, 0.76);
+      backdrop-filter: blur(18px) saturate(150%);
+      border-bottom: 1px solid rgba(127, 150, 200, 0.12);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, rgba(79,142,247,0.95), rgba(139,92,246,0.9));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      box-shadow: 0 12px 30px rgba(79,142,247,0.25), inset 0 1px 0 rgba(255,255,255,0.22);
+    }
+
+    .nav-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .nav-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .nav-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.04em;
+    }
+
+    /* Demo mode badge in nav */
+    .demo-badge {
+      background: linear-gradient(90deg, var(--accent-amber), #f97316);
+      color: #0d1117;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* ============================================================
+       PAGE LAYOUT
+       ============================================================ */
+    .page-wrapper {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .hero-panel {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 1.5rem;
+      align-items: center;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(127, 150, 200, 0.14);
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(18, 25, 40, 0.76), rgba(10, 16, 28, 0.66));
+      backdrop-filter: blur(20px) saturate(145%);
+      box-shadow: 0 26px 70px rgba(0,0,0,0.35);
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      perspective: 1600px;
+    }
+
+    .hero-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(79,142,247,0.10), transparent 40%, rgba(139,92,246,0.08));
+      pointer-events: none;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      padding: 1.25rem;
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(79,142,247,0.25);
+      background: rgba(79,142,247,0.08);
+      color: #bcd5ff;
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 4vw, 4.7rem);
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+      margin-bottom: 1rem;
+      max-width: 10ch;
+    }
+
+    .hero-title .shine {
+      background: linear-gradient(90deg, #ffffff, #9cc3ff 42%, #c7a6ff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 12px 40px rgba(79,142,247,0.14);
+    }
+
+    .hero-text {
+      max-width: 58ch;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-note {
+      margin-top: 1rem;
+      font-size: 0.82rem;
+      color: #9aa8c2;
+    }
+
+    .hero-visual {
+      position: relative;
+      min-height: 360px;
+      perspective: 1600px;
+      z-index: 1;
+    }
+
+    .stage-glow {
+      position: absolute;
+      inset: 14% 10% 12% 10%;
+      background: radial-gradient(circle, rgba(79,142,247,0.22), rgba(139,92,246,0.10) 36%, transparent 72%);
+      filter: blur(16px);
+      transform: translateZ(-120px);
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    .stage {
+      position: absolute;
+      inset: 5% 8%;
+      transform-style: preserve-3d;
+      transform: rotateX(62deg) rotateY(-18deg) rotateZ(-4deg);
+      animation: floatStage 8s ease-in-out infinite alternate;
+    }
+
+    .stage-plane,
+    .stage-card-3d,
+    .stage-orb,
+    .stage-rim {
+      position: absolute;
+      transform-style: preserve-3d;
+    }
+
+    .stage-plane {
+      inset: 18% 10% 10% 10%;
+      border-radius: 30px;
+      background: linear-gradient(180deg, rgba(22,31,49,0.84), rgba(8,12,21,0.92));
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow:
+        0 35px 60px rgba(0,0,0,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 -1px 0 rgba(79,142,247,0.15);
+    }
+
+    .stage-plane::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 22px;
+      border: 1px solid rgba(138, 162, 212, 0.14);
+      background:
+        linear-gradient(135deg, rgba(79,142,247,0.08), transparent 36%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), transparent 55%);
+    }
+
+    .stage-grid {
+      position: absolute;
+      inset: 24px;
+      background-image:
+        linear-gradient(rgba(122,145,193,0.14) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(122,145,193,0.14) 1px, transparent 1px);
+      background-size: 30px 30px;
+      opacity: 0.32;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,1), rgba(0,0,0,0));
+    }
+
+    .stage-card-3d {
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(32,40,60,0.92), rgba(20,26,40,0.98));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow:
+        0 18px 35px rgba(0,0,0,0.38),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      backdrop-filter: blur(8px);
+    }
+
+    .stage-card-a {
+      width: 44%;
+      height: 28%;
+      left: 14%;
+      top: 16%;
+      transform: translateZ(36px);
+    }
+
+    .stage-card-b {
+      width: 56%;
+      height: 22%;
+      right: 12%;
+      top: 34%;
+      transform: translateZ(18px);
+    }
+
+    .stage-card-c {
+      width: 38%;
+      height: 24%;
+      left: 23%;
+      bottom: 16%;
+      transform: translateZ(52px);
+    }
+
+    .stage-card-3d::before,
+    .stage-card-3d::after {
+      content: "";
+      position: absolute;
+      border-radius: inherit;
+    }
+
+    .stage-card-3d::before {
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent 28%, transparent 75%, rgba(79,142,247,0.1));
+      opacity: 0.85;
+    }
+
+    .stage-card-3d::after {
+      inset: auto 10% 12% 10%;
+      height: 4px;
+      background: linear-gradient(90deg, rgba(79,142,247,0), rgba(79,142,247,0.72), rgba(139,92,246,0.7), rgba(79,142,247,0));
+      filter: blur(2px);
+    }
+
+    .stage-card-3d .line {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .stage-card-3d .line.one { top: 14px; width: 58%; }
+    .stage-card-3d .line.two { top: 32px; width: 76%; }
+    .stage-card-3d .line.three { top: 50px; width: 44%; }
+
+    .stage-pill {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #d8e5ff;
+      background: rgba(79,142,247,0.16);
+      border: 1px solid rgba(79,142,247,0.24);
+    }
+
+    .stage-orb {
+      border-radius: 50%;
+      filter: blur(0.2px);
+      box-shadow: inset 0 4px 20px rgba(255,255,255,0.18), 0 18px 40px rgba(0,0,0,0.32);
+    }
+
+    .orb-a {
+      width: 120px;
+      height: 120px;
+      left: 10%;
+      top: 6%;
+      background: radial-gradient(circle at 30% 30%, #d9f0ff, #70a7ff 35%, #3b56d8 70%, #24307f 100%);
+      transform: translateZ(88px);
+      animation: orbFloat 7s ease-in-out infinite alternate;
+    }
+
+    .orb-b {
+      width: 72px;
+      height: 72px;
+      right: 18%;
+      top: 22%;
+      background: radial-gradient(circle at 30% 30%, #f1e6ff, #a879ff 36%, #6d42d6 72%, #3b2376 100%);
+      transform: translateZ(120px);
+      animation: orbFloat 8.5s ease-in-out infinite alternate-reverse;
+    }
+
+    .stage-rim {
+      inset: 10% 16%;
+      border-radius: 34px;
+      border: 1px solid rgba(131, 160, 230, 0.16);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      transform: translateZ(8px);
+      animation: rimPulse 10s ease-in-out infinite alternate;
+    }
+
+    .hero-panel:hover .stage {
+      transition: transform 0.2s ease;
+    }
+
+    /* Two-column layout on wide screens */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-visual {
+        min-height: 300px;
+      }
+    }
+
+    /* ============================================================
+       CONTACT SELECTOR PANEL (shared across sections)
+       ============================================================ */
+    .contact-panel {
+      background: linear-gradient(180deg, rgba(18, 25, 40, 0.92), rgba(14, 20, 34, 0.84));
+      border: 1px solid rgba(127, 150, 200, 0.14);
+      border-radius: 22px;
+      padding: 1.15rem 1.4rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px) saturate(145%);
+    }
+
+    .contact-panel-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    .contact-select-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .contact-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(79,142,247,0.95), rgba(139,92,246,0.92));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+      box-shadow: 0 10px 24px rgba(79,142,247,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+
+    .active-contact-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* ============================================================
+       FORM ELEMENTS
+       ============================================================ */
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.4rem;
+    }
+
+    select,
+    input[type="text"],
+    textarea {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.925rem;
+      padding: 0.625rem 0.875rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+      outline: none;
+    }
+
+    select {
+      cursor: pointer;
+      padding-right: 2rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+    }
+
+    select:focus,
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+    }
+
+    select option { background: var(--bg-card); }
+
+    textarea {
+      resize: vertical;
+      min-height: 140px;
+    }
+
+    textarea::placeholder,
+    input[type="text"]::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-group {
+      margin-bottom: 1.1rem;
+    }
+
+    /* ============================================================
+       BUTTONS
+       ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0.6rem 1.25rem;
+      border: none;
+      border-radius: 14px;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.18) 50%, transparent 80%);
+      transform: translateX(-120%);
+      transition: transform 0.5s ease;
+      pointer-events: none;
+    }
+
+    .btn:hover::after {
+      transform: translateX(120%);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #5da2ff, #3f6be8 48%, #3156be);
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(79,142,247,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+    .btn-primary:not(:disabled):hover {
+      background: linear-gradient(135deg, #7eb7ff, #5d89f3 52%, #3f61c6);
+      transform: translateY(-2px);
+      box-shadow: 0 18px 30px rgba(79,142,247,0.35), 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .btn-violet {
+      background: linear-gradient(135deg, #a678ff, #8b5cf6 52%, #6d28d9);
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(139,92,246,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+    .btn-violet:not(:disabled):hover {
+      background: linear-gradient(135deg, #b58cff, #9770ff 52%, #7b3fe3);
+      transform: translateY(-2px);
+      box-shadow: 0 18px 30px rgba(139,92,246,0.35), 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .btn-outline {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(127, 150, 200, 0.18);
+      color: var(--text-secondary);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .btn-outline:not(:disabled):hover {
+      border-color: rgba(79,142,247,0.38);
+      color: var(--accent-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.18);
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+    }
+
+    /* Spinner inside button */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============================================================
+       SECTION CARDS (main containers)
+       ============================================================ */
+    .section-card {
+      background: linear-gradient(180deg, rgba(22, 31, 49, 0.94), rgba(16, 22, 35, 0.9));
+      border: 1px solid rgba(127, 150, 200, 0.14);
+      border-radius: 22px;
+      box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.04);
+      overflow: hidden;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+    }
+
+    .section-card::before,
+    .prep-card::before,
+    .contact-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent 24%, transparent 76%, rgba(79,142,247,0.04));
+      opacity: 0.8;
+      z-index: 0;
+    }
+
+    .section-card > *,
+    .prep-card > *,
+    .contact-panel > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-card:hover {
+      transform: translateY(-5px) rotateX(1.1deg);
+      border-color: rgba(79,142,247,0.22);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.38), 0 0 0 1px rgba(79,142,247,0.06), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .section-header {
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid rgba(127, 150, 200, 0.12);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.02), transparent);
+    }
+
+    .section-icon {
+      font-size: 1.1rem;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .section-badge {
+      margin-left: auto;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .badge-blue {
+      background: rgba(79,142,247,0.15);
+      color: var(--accent-blue);
+      border: 1px solid rgba(79,142,247,0.3);
+    }
+
+    .badge-violet {
+      background: rgba(139,92,246,0.15);
+      color: var(--accent-violet);
+      border: 1px solid rgba(139,92,246,0.3);
+    }
+
+    .section-body {
+      padding: 1.5rem;
+    }
+
+    /* ============================================================
+       TOGGLE SWITCH (Memory ON/OFF)
+       ============================================================ */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.875rem 1rem;
+      background: linear-gradient(180deg, rgba(7,11,20,0.92), rgba(10,14,22,0.92));
+      border: 1px solid rgba(127, 150, 200, 0.14);
+      border-radius: 16px;
+      margin-bottom: 1.1rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .toggle-label-text {
+      flex: 1;
+    }
+
+    .toggle-label-text strong {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .toggle-label-text small {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* The actual switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .switch-track::before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .switch input:checked + .switch-track {
+      background: var(--accent-violet);
+    }
+
+    .switch input:checked + .switch-track::before {
+      transform: translateX(20px);
+    }
+
+    /* ============================================================
+       STATUS MESSAGES (success, error, info)
+       ============================================================ */
+    .status-msg {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      margin-top: 0.875rem;
+      line-height: 1.5;
+    }
+
+    .status-msg-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    .status-success {
+      background: rgba(74,222,128,0.1);
+      border: 1px solid rgba(74,222,128,0.25);
+      color: var(--accent-green);
+    }
+
+    .status-error {
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.25);
+      color: var(--accent-red);
+    }
+
+    .status-info {
+      background: rgba(79,142,247,0.1);
+      border: 1px solid rgba(79,142,247,0.25);
+      color: var(--accent-blue);
+    }
+
+    .status-warning {
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.25);
+      color: var(--accent-amber);
+    }
+
+    /* ============================================================
+       EXTRACTED MEETING INFO CARDS
+       ============================================================ */
+    .extracted-panel {
+      margin-top: 1.25rem;
+      border: 1px solid rgba(127, 150, 200, 0.16);
+      border-radius: 18px;
+      overflow: hidden;
+      animation: fadeSlideIn 0.3s ease;
+      box-shadow: 0 16px 34px rgba(0,0,0,0.2);
+    }
+
+    .extracted-panel-header {
+      background: rgba(79,142,247,0.08);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .extracted-panel-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent-blue);
+    }
+
+    .extracted-panel-body {
+      padding: 1rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+    }
+
+    .extracted-field { }
+
+    .extracted-field-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .extracted-field-value {
+      font-size: 0.875rem;
+      color: var(--text-primary);
+    }
+
+    /* Sentiment score pill */
+    .sentiment-pill {
+      display: inline-block;
+      padding: 2px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* List of bullet items */
+    .item-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .item-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 0.875rem;
+      color: var(--text-primary);
+    }
+
+    .item-list li::before {
+      content: "›";
+      color: var(--accent-blue);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .empty-list-note {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Commitment sub-card */
+    .commitment-item {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.875rem;
+      font-size: 0.84rem;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .commitment-item .commit-what {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .commitment-item .commit-meta {
+      color: var(--text-secondary);
+      font-size: 0.76rem;
+    }
+
+    .commit-status {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ============================================================
+       PREPARATION RESULT CARDS
+       ============================================================ */
+    .prep-results {
+      margin-top: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      animation: fadeSlideIn 0.3s ease;
+    }
+
+    .prep-card {
+      background: linear-gradient(180deg, rgba(21, 29, 45, 0.96), rgba(13, 18, 30, 0.92));
+      border: 1px solid rgba(127, 150, 200, 0.14);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 16px 34px rgba(0,0,0,0.22);
+      transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+      position: relative;
+    }
+
+    .prep-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 22px 46px rgba(0,0,0,0.32);
+      border-color: rgba(127, 150, 200, 0.22);
+    }
+
+    .prep-card-header {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .prep-card-icon { font-size: 1rem; }
+
+    .prep-card-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .prep-card-body {
+      padding: 0.875rem 1rem;
+    }
+
+    /* Card accent colors */
+    .card-red   .prep-card-header { background: rgba(248,113,113,0.07); border-color: rgba(248,113,113,0.2); }
+    .card-red   .prep-card-title  { color: var(--accent-red); }
+
+    .card-amber .prep-card-header { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.2); }
+    .card-amber .prep-card-title  { color: var(--accent-amber); }
+
+    .card-teal  .prep-card-header { background: rgba(45,212,191,0.07); border-color: rgba(45,212,191,0.2); }
+    .card-teal  .prep-card-title  { color: var(--accent-teal); }
+
+    .card-violet .prep-card-header { background: rgba(139,92,246,0.07); border-color: rgba(139,92,246,0.2); }
+    .card-violet .prep-card-title  { color: var(--accent-violet); }
+
+    .card-blue  .prep-card-header { background: rgba(79,142,247,0.07); border-color: rgba(79,142,247,0.2); }
+    .card-blue  .prep-card-title  { color: var(--accent-blue); }
+
+    /* Suggested opener quote */
+    .opener-quote {
+      background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(79,142,247,0.1));
+      border-left: 3px solid var(--accent-violet);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 0.875rem 1rem;
+      font-size: 0.925rem;
+      font-style: italic;
+      color: var(--text-primary);
+      line-height: 1.65;
+    }
+
+    /* ============================================================
+       LOG OUTCOME SECTION
+       ============================================================ */
+    .outcome-section {
+      margin-top: 1.5rem;
+    }
+
+    /* ============================================================
+       EMPTY STATE
+       ============================================================ */
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .empty-state-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .empty-state-text {
+      font-size: 0.83rem;
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       DEMO MODE BANNER
+       ============================================================ */
+    .demo-banner {
+      background: linear-gradient(90deg, rgba(245,158,11,0.14), rgba(249,115,22,0.08));
+      border: 1px solid rgba(245,158,11,0.26);
+      border-radius: 18px;
+      padding: 0.8rem 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.84rem;
+      color: var(--accent-amber);
+      box-shadow: 0 16px 30px rgba(0,0,0,0.16);
+      backdrop-filter: blur(12px);
+    }
+
+    /* ============================================================
+       PAGE HEADING
+       ============================================================ */
+    .page-heading {
+      display: none;
+    }
+
+    .page-heading h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.3rem;
+    }
+
+    .page-heading p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* ============================================================
+       DIVIDER
+       ============================================================ */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.25rem 0;
+    }
+
+    /* ============================================================
+       ANIMATIONS
+       ============================================================ */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* ============================================================
+       MOBILE ADJUSTMENTS
+       ============================================================ */
+    @media (max-width: 600px) {
+      .nav { padding: 0 1rem; }
+      .page-wrapper { padding: 1.25rem 1rem 3rem; }
+      .section-body { padding: 1rem; }
+      .contact-panel { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+      .hero-panel {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        border-radius: 22px;
+      }
+      .hero-copy { padding: 0.75rem 0.35rem 0.15rem; }
+      .hero-visual { min-height: 280px; }
+      .hero-title { max-width: 100%; }
+      .hero-actions { flex-direction: column; }
+      .hero-actions .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============================================================
+       TOP NAVIGATION
+       ============================================================ -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-brand">
+      <div class="nav-logo" aria-hidden="true">🧠</div>
+      <div class="nav-title-group">
+        <span class="nav-title">Meeting Prep Agent</span>
+        <span class="nav-subtitle">Every conversation, remembered.</span>
+      </div>
+    </div>
+    <!-- This badge is shown/hidden by JavaScript based on DEMO_MODE -->
+    <span id="demoBadge" class="demo-badge hidden" aria-live="polite">⚡ Demo Mode</span>
+  </nav>
+
+  <!-- ============================================================
+       MAIN PAGE CONTENT
+       ============================================================ -->
+  <main class="page-wrapper" role="main">
+
+    <!-- Premium hero / 3D intro -->
+    <section class="hero-panel" aria-label="Product introduction">
+      <div class="hero-copy">
+        <div class="hero-kicker">AI meeting memory</div>
+        <h1 class="hero-title">
+          <span class="shine">Meeting Prep Agent</span>
+        </h1>
+        <p class="hero-text">
+          Turn notes into briefings, remember past conversations with Hindsight memory, and walk into every meeting with the right context.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" type="button" onclick="document.getElementById('meetingNotes').focus()">
+            Log a meeting
+          </button>
+          <button class="btn btn-outline" type="button" onclick="document.getElementById('prepMeBtn').focus()">
+            Prep a briefing
+          </button>
+        </div>
+        <div class="hero-note">Professional frontend for FastAPI, with demo mode built in for local testing.</div>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <div class="stage-glow"></div>
+        <div class="stage">
+          <div class="stage-rim"></div>
+          <div class="stage-plane">
+            <div class="stage-grid"></div>
+          </div>
+
+          <div class="stage-card-3d stage-card-a">
+            <div class="stage-pill">Saved note</div>
+            <div class="line one"></div>
+            <div class="line two"></div>
+            <div class="line three"></div>
+          </div>
+
+          <div class="stage-card-3d stage-card-b">
+            <div class="stage-pill">Hindsight</div>
+            <div class="line one"></div>
+            <div class="line two"></div>
+            <div class="line three"></div>
+          </div>
+
+          <div class="stage-card-3d stage-card-c">
+            <div class="stage-pill">Briefing</div>
+            <div class="line one"></div>
+            <div class="line two"></div>
+            <div class="line three"></div>
+          </div>
+
+          <div class="stage-orb orb-a"></div>
+          <div class="stage-orb orb-b"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Demo mode banner (shown when DEMO_MODE = true) -->
+    <div id="demoBanner" class="demo-banner hidden" role="alert">
+      <span aria-hidden="true">⚡</span>
+      <div>
+        <strong>Demo Mode is active.</strong>
+        Sample data is shown for visual testing. No requests are sent to the backend.
+        To use the real API, set <code style="font-family: var(--font-mono); font-size: 0.82rem;">DEMO_MODE = false</code> in the JavaScript.
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────────
+         CONTACT SELECTOR (shared, visible at top of workspace)
+         ────────────────────────────────────────────────────────── -->
+    <div class="contact-panel" role="region" aria-label="Contact selection">
+      <span class="contact-panel-label">Active Contact</span>
+      <div class="contact-select-row">
+        <div class="contact-avatar" id="contactAvatar" aria-hidden="true">?</div>
+        <div>
+          <div class="active-contact-name" id="activeContactName">No contact selected</div>
+        </div>
+      </div>
+
+      <!-- Contact dropdown -->
+      <div class="form-group" style="margin:0; flex:1; min-width:180px;">
+        <label for="contactSelect" class="sr-only">Select contact</label>
+        <select id="contactSelect" aria-label="Select a contact">
+          <option value="">— Choose a contact —</option>
+          <option value="Sarah Chen">Sarah Chen</option>
+          <option value="John Miller">John Miller</option>
+          <option value="Priya Sharma">Priya Sharma</option>
+          <option value="__new__">+ Enter new contact…</option>
+        </select>
+      </div>
+
+      <!-- New contact input (shown only when "Enter new contact" is chosen) -->
+      <div id="newContactWrapper" class="hidden" style="flex:1; min-width:180px;">
+        <label for="newContactInput" class="sr-only">New contact name</label>
+        <input
+          type="text"
+          id="newContactInput"
+          placeholder="e.g. Alex Johnson"
+          aria-label="Enter new contact name"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────────
+         TWO-COLUMN WORKSPACE
+         ────────────────────────────────────────────────────────── -->
+    <div class="workspace">
+
+      <!-- ========================================================
+           LEFT COLUMN — LOG A MEETING
+           ======================================================== -->
+      <div>
+        <div class="section-card" role="region" aria-labelledby="logSectionTitle">
+          <div class="section-header">
+            <span class="section-icon" aria-hidden="true">📝</span>
+            <h2 class="section-title" id="logSectionTitle">Log a Meeting</h2>
+            <span class="section-badge badge-blue">Save notes</span>
+          </div>
+
+          <div class="section-body">
+            <!-- Meeting notes textarea -->
+            <div class="form-group">
+              <label for="meetingNotes">Meeting Notes</label>
+              <textarea
+                id="meetingNotes"
+                placeholder="Write your meeting notes here…
+
+Example:
+- Discussed Q3 budget allocation; Sarah is concerned about overspend in marketing.
+- Sarah committed to sending the revised forecast by Friday.
+- Competitor Acme Corp was mentioned — they are undercutting on price.
+- Overall tone was cautious but collaborative.
+- Action item: follow up on the hiring plan next week."
+                aria-label="Meeting notes"
+              ></textarea>
+            </div>
+
+            <!-- Save button -->
+            <button
+              id="saveMeetingBtn"
+              class="btn btn-primary"
+              onclick="handleSaveMeeting()"
+              aria-label="Save meeting notes"
+            >
+              <span id="saveBtnIcon" aria-hidden="true">💾</span>
+              <span id="saveBtnText">Save Meeting</span>
+            </button>
+
+            <!-- Status message area for save operation -->
+            <div id="saveStatus" role="alert" aria-live="polite"></div>
+
+            <!-- Extracted meeting information panel (shown after successful save) -->
+            <div id="extractedPanel" class="hidden"></div>
+          </div>
+        </div>
+
+        <!-- --------------------------------------------------------
+             LOG OUTCOME SECTION (below the log card)
+             -------------------------------------------------------- -->
+        <div class="outcome-section">
+          <div class="section-card" role="region" aria-labelledby="outcomeSectionTitle">
+            <div class="section-header">
+              <span class="section-icon" aria-hidden="true">✅</span>
+              <h2 class="section-title" id="outcomeSectionTitle">Record Meeting Outcome</h2>
+              <span class="section-badge badge-blue">Optional</span>
+            </div>
+
+            <div class="section-body">
+              <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:1rem;">
+                After a meeting, record what happened. This helps the agent track follow-through over time.
+              </p>
+
+              <!-- Outcome text field -->
+              <div class="form-group">
+                <label for="outcomeText">Outcome / Follow-up Notes</label>
+                <textarea
+                  id="outcomeText"
+                  style="min-height:90px;"
+                  placeholder="e.g. Sarah sent the forecast on time. Budget approved. Next step: schedule implementation review."
+                  aria-label="Meeting outcome notes"
+                ></textarea>
+              </div>
+
+              <!-- Submit outcome button -->
+              <button
+                id="logOutcomeBtn"
+                class="btn btn-outline"
+                onclick="handleLogOutcome()"
+                aria-label="Record meeting outcome"
+              >
+                <span id="outcomeBtnIcon" aria-hidden="true">📤</span>
+                <span id="outcomeBtnText">Record Outcome</span>
+              </button>
+
+              <!-- Status message for outcome -->
+              <div id="outcomeStatus" role="alert" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /left column -->
+
+      <!-- ========================================================
+           RIGHT COLUMN — PREPARE FOR MEETING
+           ======================================================== -->
+      <div>
+        <div class="section-card" role="region" aria-labelledby="prepSectionTitle">
+          <div class="section-header">
+            <span class="section-icon" aria-hidden="true">🚀</span>
+            <h2 class="section-title" id="prepSectionTitle">Prepare for Meeting</h2>
+            <span class="section-badge badge-violet">AI Briefing</span>
+          </div>
+
+          <div class="section-body">
+            <!-- Shows currently selected contact -->
+            <p style="font-size:0.84rem; color:var(--text-secondary); margin-bottom:1rem;">
+              Get a pre-meeting briefing for
+              <strong id="prepContactName" style="color:var(--text-primary);">
+                your selected contact
+              </strong>.
+            </p>
+
+            <!-- Memory toggle -->
+            <div class="toggle-row" role="group" aria-labelledby="memoryToggleLabel">
+              <div class="toggle-label-text">
+                <strong id="memoryToggleLabel">Hindsight Memory</strong>
+                <small id="memoryToggleHint">ON — previous meeting history will be used</small>
+              </div>
+              <label class="switch" aria-label="Toggle Hindsight memory on or off">
+                <input
+                  type="checkbox"
+                  id="memoryToggle"
+                  checked
+                  onchange="updateMemoryHint()"
+                />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+
+            <!-- Prep Me button -->
+            <button
+              id="prepMeBtn"
+              class="btn btn-violet"
+              onclick="handlePrepMeeting()"
+              aria-label="Prepare meeting briefing"
+              style="width:100%; justify-content:center;"
+            >
+              <span id="prepBtnIcon" aria-hidden="true">✨</span>
+              <span id="prepBtnText">Prep Me</span>
+            </button>
+
+            <!-- Status message for prep operation -->
+            <div id="prepStatus" role="alert" aria-live="polite"></div>
+
+            <!-- Preparation result cards (shown after successful prep) -->
+            <div id="prepResults" class="hidden"></div>
+          </div>
+        </div>
+      </div><!-- /right column -->
+
+    </div><!-- /workspace -->
+  </main><!-- /main -->
+
+
+  <!-- ============================================================
+       JAVASCRIPT
+       ============================================================ -->
+  <script>
+    // ================================================================
+    // CONFIGURATION
+    // ================================================================
+
+    /**
+     * Set DEMO_MODE to true to use sample data without hitting the backend.
+     * Set DEMO_MODE to false to use the real FastAPI server.
+     */
+    const DEMO_MODE = false;
+
+    /**
+     * Base URL for the FastAPI backend.
+     * Change this if your server runs on a different host or port.
+     */
+    const API_BASE_URL = "http://127.0.0.1:8000";
+
+
+    // ================================================================
+    // DEMO DATA
+    // Realistic sample responses used only when DEMO_MODE = true.
+    // This data is completely separate from real API handling.
+    // ================================================================
+
+    const DEMO_LOG_RESPONSE = {
+      message: "Meeting logged successfully.",
+      extracted: {
+        key_points: [
+          "Q3 budget is over-allocated in the marketing department.",
+          "Sarah will lead the upcoming product launch planning.",
+          "Team velocity has improved by 15% this sprint."
+        ],
+        commitments: [
+          {
+            what: "Send revised Q3 forecast to the finance team",
+            due_date: "2025-07-18",
+            status: "open"
+          },
+          {
+            what: "Schedule a follow-up call with the engineering lead",
+            due_date: "2025-07-15",
+            status: "open"
+          }
+        ],
+        sentiment_score: 0.65,
+        landmines: [
+          "Avoid mentioning the delayed product roadmap — caused friction last time.",
+          "Do not bring up the Q2 missed targets without a clear plan."
+        ],
+        competitors: ["Acme Corp", "NovaSoft"]
+      }
+    };
+
+    const DEMO_PREP_RESPONSE = {
+      contact: "Sarah Chen",
+      critical_alerts: [
+        "Sarah mentioned budget concerns in 2 of the last 3 meetings — come prepared with numbers.",
+        "An outstanding commitment from your side (Q2 report) has not been acknowledged — address proactively."
+      ],
+      open_commitments: [
+        {
+          what: "Send revised Q3 forecast to the finance team",
+          due_date: "2025-07-18",
+          status: "open"
+        },
+        {
+          what: "Schedule follow-up with engineering lead",
+          due_date: "2025-07-15",
+          status: "overdue"
+        }
+      ],
+      sentiment_trend: "Sentiment has been cautiously positive but trending slightly downward over the last two interactions. Sarah appears engaged but stressed about timelines.",
+      landmines: [
+        "Do not bring up the Q2 missed targets without a resolution plan.",
+        "Avoid the topic of the delayed product roadmap.",
+        "Do not reference the restructuring discussion from March."
+      ],
+      suggested_opener: "Sarah, I've been thinking about the budget concerns you raised last time — I have some updated numbers that I think will help us move forward. Before we dive in, how has the team been feeling about the launch timeline?"
+    };
+
+    const DEMO_OUTCOME_RESPONSE = {
+      message: "Outcome recorded successfully."
+    };
+
+
+    // ================================================================
+    // STATE
+    // Tracks the currently selected contact name across the page.
+    // ================================================================
+
+    let currentContact = ""; // The resolved contact name (string)
+
+
+    // ================================================================
+    // INITIALISATION
+    // ================================================================
+
+    /**
+     * Runs once when the page loads.
+     * Sets up the demo mode UI and attaches any event listeners
+     * that are easier to set here than inline.
+     */
+    function init() {
+      if (DEMO_MODE) {
+        document.getElementById("demoBadge").classList.remove("hidden");
+        document.getElementById("demoBanner").classList.remove("hidden");
+      }
+
+      // Wire up contact selector change
+      document.getElementById("contactSelect").addEventListener("change", onContactSelectChange);
+
+      // Wire up new-contact input (live typing updates the active contact)
+      document.getElementById("newContactInput").addEventListener("input", onNewContactInput);
+
+      // Set initial memory hint text
+      updateMemoryHint();
+    }
+
+
+    // ================================================================
+    // CONTACT SELECTION LOGIC
+    // ================================================================
+
+    /**
+     * Called when the user changes the contact dropdown.
+     * Shows/hides the custom contact input as needed.
+     * Clears stale results from a previous contact.
+     */
+    function onContactSelectChange() {
+      const select = document.getElementById("contactSelect");
+      const newWrapper = document.getElementById("newContactWrapper");
+
+      if (select.value === "__new__") {
+        // Show the free-text input
+        newWrapper.classList.remove("hidden");
+        // Clear the resolved contact until the user types
+        setCurrentContact("");
+      } else {
+        // Hide the free-text input
+        newWrapper.classList.add("hidden");
+        document.getElementById("newContactInput").value = "";
+        setCurrentContact(select.value);
+      }
+    }
+
+    /**
+     * Called as the user types in the new contact input.
+     * Updates the active contact in real-time.
+     */
+    function onNewContactInput() {
+      const name = document.getElementById("newContactInput").value.trim();
+      setCurrentContact(name);
+    }
+
+    /**
+     * Sets the global contact and updates all UI elements that
+     * display the contact name. Also clears old results so data
+     * from a previous contact is never shown for a new one.
+     *
+     * @param {string} name - The resolved contact name, or "" if none.
+     */
+    function setCurrentContact(name) {
+      currentContact = name;
+
+      // Update the avatar and display name in the contact panel
+      const avatarEl = document.getElementById("contactAvatar");
+      const nameEl   = document.getElementById("activeContactName");
+
+      if (name) {
+        avatarEl.textContent = name.charAt(0).toUpperCase();
+        nameEl.textContent   = name;
+      } else {
+        avatarEl.textContent = "?";
+        nameEl.textContent   = "No contact selected";
+      }
+
+      // Update the name shown in the Prep section
+      document.getElementById("prepContactName").textContent = name || "your selected contact";
+
+      // Clear contact-specific results so old data is never shown for a new contact
+      clearExtractedPanel();
+      clearPrepResults();
+      document.getElementById("saveStatus").innerHTML    = "";
+      document.getElementById("prepStatus").innerHTML    = "";
+      document.getElementById("outcomeStatus").innerHTML = "";
+    }
+
+
+    // ================================================================
+    // MEMORY TOGGLE
+    // ================================================================
+
+    /**
+     * Updates the hint text shown next to the memory toggle
+     * whenever the user flips it.
+     */
+    function updateMemoryHint() {
+      const isOn   = document.getElementById("memoryToggle").checked;
+      const hint   = document.getElementById("memoryToggleHint");
+      hint.textContent = isOn
+        ? "ON — previous meeting history will be used"
+        : "OFF — this briefing will not use Hindsight memory";
+    }
+
+
+    // ================================================================
+    // API HELPERS
+    // ================================================================
+
+    /**
+     * Generic POST helper.
+     * Sends a JSON body to the given path and returns the parsed response.
+     * Throws a descriptive Error on any failure (network, HTTP, or parse).
+     *
+     * @param {string} path   - e.g. "/log-meeting"
+     * @param {object} body   - Plain object that will be JSON-serialised.
+     * @returns {Promise<object>} Parsed JSON response.
+     */
+    async function apiPost(path, body) {
+      let response;
+      try {
+        response = await fetch(API_BASE_URL + path, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(body)
+        });
+      } catch (networkError) {
+        // fetch() itself threw — the server is unreachable
+        throw new Error(
+          "Could not connect to the backend. Make sure the FastAPI server is running at " +
+          API_BASE_URL + "."
+        );
+      }
+
+      // Parse the body regardless of status so we can show server error messages
+      let data;
+      try {
+        data = await response.json();
+      } catch (_) {
+        throw new Error(
+          "The server returned an unexpected response (not valid JSON). Status: " + response.status
+        );
+      }
+
+      if (!response.ok) {
+        // Use the server's detail field if available (FastAPI convention)
+        const serverMessage = data?.detail || data?.message || JSON.stringify(data);
+        throw new Error("Server error " + response.status + ": " + serverMessage);
+      }
+
+      return data;
+    }
+
+
+    // ================================================================
+    // SAVE MEETING HANDLER
+    // ================================================================
+
+    /**
+     * Called when the user clicks "Save Meeting".
+     * Validates input → calls /log-meeting → shows extracted info.
+     */
+    async function handleSaveMeeting() {
+      const notes      = document.getElementById("meetingNotes").value.trim();
+      const statusEl   = document.getElementById("saveStatus");
+      const btn        = document.getElementById("saveMeetingBtn");
+
+      // --- Validate ---
+      if (!currentContact) {
+        showStatus(statusEl, "error", "Please select or enter a contact name before saving.");
+        return;
+      }
+      if (!notes) {
+        showStatus(statusEl, "error", "Please enter your meeting notes before saving.");
+        return;
+      }
+
+      // --- Loading state ---
+      setButtonLoading(btn, "saveBtnIcon", "saveBtnText", true, "Saving…");
+      showStatus(statusEl, "info", "Saving meeting…");
+      clearExtractedPanel();
+
+      try {
+        let data;
+
+        if (DEMO_MODE) {
+          // Demo: return sample data without hitting the server
+          await fakeDemoDelay();
+          data = DEMO_LOG_RESPONSE;
+        } else {
+          // Real API call — request body matches CONTRACT.md
+          data = await apiPost("/log-meeting", {
+            contact_name: currentContact,
+            notes:        notes
+          });
+        }
+
+        // Success
+        showStatus(statusEl, "success", data.message || "Meeting saved successfully.");
+        renderExtractedPanel(data.extracted);
+
+      } catch (err) {
+        showStatus(statusEl, "error", err.message);
+        // Do not render any extracted panel on failure
+      } finally {
+        setButtonLoading(btn, "saveBtnIcon", "saveBtnText", false, "Save Meeting", "💾");
+      }
+    }
+
+
+    // ================================================================
+    // PREP MEETING HANDLER
+    // ================================================================
+
+    /**
+     * Called when the user clicks "Prep Me".
+     * Validates input → calls /prep-meeting → shows briefing cards.
+     */
+    async function handlePrepMeeting() {
+      const statusEl = document.getElementById("prepStatus");
+      const btn      = document.getElementById("prepMeBtn");
+      const memoryOn = document.getElementById("memoryToggle").checked;
+
+      // --- Validate ---
+      if (!currentContact) {
+        showStatus(statusEl, "error", "Please select or enter a contact name first.");
+        return;
+      }
+
+      // --- Loading state ---
+      setButtonLoading(btn, "prepBtnIcon", "prepBtnText", true, "Preparing…");
+      showStatus(statusEl, "info", "Generating your briefing…");
+      clearPrepResults();
+
+      try {
+        let data;
+
+        if (DEMO_MODE) {
+          // Demo: return sample data without hitting the server
+          await fakeDemoDelay();
+          data = DEMO_PREP_RESPONSE;
+        } else {
+          // Real API call — request body matches CONTRACT.md
+          data = await apiPost("/prep-meeting", {
+            contact_name: currentContact,
+            memory_on:    memoryOn
+          });
+        }
+
+        // Success
+        statusEl.innerHTML = "";
+        renderPrepResults(data);
+
+      } catch (err) {
+        showStatus(statusEl, "error", err.message);
+      } finally {
+        setButtonLoading(btn, "prepBtnIcon", "prepBtnText", false, "Prep Me", "✨");
+      }
+    }
+
+
+    // ================================================================
+    // LOG OUTCOME HANDLER
+    // ================================================================
+
+    /**
+     * Called when the user clicks "Record Outcome".
+     * Validates input → calls /log-outcome.
+     */
+    async function handleLogOutcome() {
+      const outcomeText = document.getElementById("outcomeText").value.trim();
+      const statusEl    = document.getElementById("outcomeStatus");
+      const btn         = document.getElementById("logOutcomeBtn");
+
+      // --- Validate ---
+      if (!currentContact) {
+        showStatus(statusEl, "error", "Please select or enter a contact name first.");
+        return;
+      }
+      if (!outcomeText) {
+        showStatus(statusEl, "error", "Please enter outcome notes before submitting.");
+        return;
+      }
+
+      // --- Loading state ---
+      setButtonLoading(btn, "outcomeBtnIcon", "outcomeBtnText", true, "Saving outcome…");
+      showStatus(statusEl, "info", "Recording outcome…");
+
+      try {
+        let data;
+
+        if (DEMO_MODE) {
+          await fakeDemoDelay();
+          data = DEMO_OUTCOME_RESPONSE;
+        } else {
+          // Real API call — request body matches CONTRACT.md
+          data = await apiPost("/log-outcome", {
+            contact_name: currentContact,
+            outcome:      outcomeText
+          });
+        }
+
+        showStatus(statusEl, "success", data.message || "Outcome recorded successfully.");
+        document.getElementById("outcomeText").value = "";
+
+      } catch (err) {
+        showStatus(statusEl, "error", err.message);
+      } finally {
+        setButtonLoading(btn, "outcomeBtnIcon", "outcomeBtnText", false, "Record Outcome", "📤");
+      }
+    }
+
+
+    // ================================================================
+    // RENDER — EXTRACTED MEETING INFO
+    // ================================================================
+
+    /**
+     * Renders the extracted meeting data returned by /log-meeting
+     * into the #extractedPanel element.
+     *
+     * All values are rendered using safe DOM methods (textContent),
+     * never via innerHTML with raw API data.
+     *
+     * @param {object} extracted - The `extracted` field from the API response.
+     */
+    function renderExtractedPanel(extracted) {
+      const panel = document.getElementById("extractedPanel");
+      panel.innerHTML = ""; // Clear any previous content
+
+      if (!extracted) {
+        panel.classList.add("hidden");
+        return;
+      }
+
+      // --- Outer wrapper ---
+      const wrapper = document.createElement("div");
+      wrapper.className = "extracted-panel";
+
+      // --- Header ---
+      const header = document.createElement("div");
+      header.className = "extracted-panel-header";
+      const headerTitle = document.createElement("span");
+      headerTitle.className = "extracted-panel-title";
+      headerTitle.textContent = "🔍 Extracted Meeting Information";
+      header.appendChild(headerTitle);
+      wrapper.appendChild(header);
+
+      // --- Body ---
+      const body = document.createElement("div");
+      body.className = "extracted-panel-body";
+
+      // Key points
+      if (extracted.key_points) {
+        body.appendChild(makeFieldBlock(
+          "Key Points",
+          makeBulletList(extracted.key_points)
+        ));
+      }
+
+      // Commitments
+      if (extracted.commitments) {
+        body.appendChild(makeFieldBlock(
+          "Commitments",
+          makeCommitmentList(extracted.commitments)
+        ));
+      }
+
+      // Sentiment score
+      if (extracted.sentiment_score !== undefined && extracted.sentiment_score !== null) {
+        body.appendChild(makeFieldBlock(
+          "Sentiment Score",
+          makeSentimentPill(extracted.sentiment_score)
+        ));
+      }
+
+      // Landmines / topics to avoid
+      if (extracted.landmines) {
+        body.appendChild(makeFieldBlock(
+          "Topics to Avoid",
+          makeBulletList(extracted.landmines)
+        ));
+      }
+
+      // Competitors
+      if (extracted.competitors && extracted.competitors.length > 0) {
+        body.appendChild(makeFieldBlock(
+          "Competitors Mentioned",
+          makeBulletList(extracted.competitors)
+        ));
+      }
+
+      wrapper.appendChild(body);
+      panel.appendChild(wrapper);
+      panel.classList.remove("hidden");
+    }
+
+    /** Removes the extracted panel content and hides it. */
+    function clearExtractedPanel() {
+      const panel = document.getElementById("extractedPanel");
+      panel.innerHTML = "";
+      panel.classList.add("hidden");
+    }
+
+
+    // ================================================================
+    // RENDER — PREPARATION BRIEFING CARDS
+    // ================================================================
+
+    /**
+     * Renders the prep briefing cards from the /prep-meeting response.
+     * Each card maps to an exact field from CONTRACT.md.
+     *
+     * @param {object} data - The full JSON response from /prep-meeting.
+     */
+    function renderPrepResults(data) {
+      const container = document.getElementById("prepResults");
+      container.innerHTML = "";
+
+      // Check if the response looks empty / has minimal data
+      const hasAlerts     = data.critical_alerts   && data.critical_alerts.length   > 0;
+      const hasCommits    = data.open_commitments  && data.open_commitments.length  > 0;
+      const hasSentiment  = data.sentiment_trend   && data.sentiment_trend.trim()   !== "";
+      const hasLandmines  = data.landmines          && data.landmines.length          > 0;
+      const hasOpener     = data.suggested_opener  && data.suggested_opener.trim()  !== "";
+
+      const hasAnyData = hasAlerts || hasCommits || hasSentiment || hasLandmines || hasOpener;
+
+      if (!hasAnyData) {
+        container.appendChild(makeEmptyState(
+          "📭",
+          "Not enough meeting history yet",
+          "Log meetings with " + escapeText(currentContact) +
+          " to build up history. The more you log, the richer your briefing will be."
+        ));
+        container.classList.remove("hidden");
+        return;
+      }
+
+      const results = document.createElement("div");
+      results.className = "prep-results";
+
+      // ── Card 1: Critical Alerts ──────────────────────────────────
+      results.appendChild(makePrepCard(
+        "card-red",
+        "🚨",
+        "Critical Alerts",
+        data.critical_alerts,
+        "list",
+        "No critical alerts — all clear!"
+      ));
+
+      // ── Card 2: Broken / Open Commitments ────────────────────────
+      // NOTE: Using the exact field name `open_commitments` from CONTRACT.md
+      results.appendChild(makePrepCard(
+        "card-amber",
+        "📋",
+        "Broken Commitments",
+        data.open_commitments,
+        "commitments",
+        "No open commitments to flag."
+      ));
+
+      // ── Card 3: Sentiment Trend ───────────────────────────────────
+      results.appendChild(makePrepCard(
+        "card-teal",
+        "📈",
+        "Sentiment Trend",
+        data.sentiment_trend,
+        "text",
+        "No sentiment data available yet."
+      ));
+
+      // ── Card 4: Topics to Avoid (Landmines) ──────────────────────
+      // NOTE: Using the exact field name `landmines` from CONTRACT.md
+      results.appendChild(makePrepCard(
+        "card-violet",
+        "⚠️",
+        "Topics to Avoid",
+        data.landmines,
+        "list",
+        "No known topics to avoid."
+      ));
+
+      // ── Card 5: Suggested Opener ──────────────────────────────────
+      results.appendChild(makePrepCard(
+        "card-blue",
+        "💬",
+        "Suggested Opener",
+        data.suggested_opener,
+        "opener",
+        "No suggested opener available."
+      ));
+
+      container.appendChild(results);
+      container.classList.remove("hidden");
+    }
+
+    /**
+     * Builds a single preparation card element.
+     *
+     * @param {string} colorClass  - CSS class for accent colour (e.g. "card-red")
+     * @param {string} icon        - Emoji icon
+     * @param {string} title       - Card heading text
+     * @param {*}      value       - The field value from the API response
+     * @param {string} type        - "list" | "commitments" | "text" | "opener"
+     * @param {string} emptyMsg    - Message shown when value is empty
+     */
+    function makePrepCard(colorClass, icon, title, value, type, emptyMsg) {
+      const card = document.createElement("div");
+      card.className = "prep-card " + colorClass;
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "prep-card-header";
+
+      const iconEl = document.createElement("span");
+      iconEl.className = "prep-card-icon";
+      iconEl.setAttribute("aria-hidden", "true");
+      iconEl.textContent = icon;
+
+      const titleEl = document.createElement("h3");
+      titleEl.className = "prep-card-title";
+      titleEl.textContent = title;
+
+      header.appendChild(iconEl);
+      header.appendChild(titleEl);
+      card.appendChild(header);
+
+      // Body
+      const body = document.createElement("div");
+      body.className = "prep-card-body";
+
+      const isEmpty =
+        value === null ||
+        value === undefined ||
+        (Array.isArray(value) && value.length === 0) ||
+        (typeof value === "string" && value.trim() === "");
+
+      if (isEmpty) {
+        const note = document.createElement("p");
+        note.className = "empty-list-note";
+        note.textContent = emptyMsg;
+        body.appendChild(note);
+      } else {
+        if (type === "list") {
+          body.appendChild(makeBulletList(value));
+        } else if (type === "commitments") {
+          body.appendChild(makeCommitmentList(value));
+        } else if (type === "opener") {
+          const quote = document.createElement("div");
+          quote.className = "opener-quote";
+          quote.textContent = value; // Safe — no innerHTML
+          body.appendChild(quote);
+        } else {
+          // Plain text (e.g. sentiment_trend)
+          const p = document.createElement("p");
+          p.style.fontSize = "0.875rem";
+          p.style.color    = "var(--text-primary)";
+          p.style.lineHeight = "1.65";
+          p.textContent = value; // Safe
+          body.appendChild(p);
+        }
+      }
+
+      card.appendChild(body);
+      return card;
+    }
+
+    /** Removes the prep results content and hides the container. */
+    function clearPrepResults() {
+      const container = document.getElementById("prepResults");
+      container.innerHTML = "";
+      container.classList.add("hidden");
+    }
+
+
+    // ================================================================
+    // DOM BUILDER HELPERS
+    // These create DOM nodes safely without using innerHTML for user data.
+    // ================================================================
+
+    /**
+     * Creates a labelled field block (label + content node).
+     * Used inside the extracted panel.
+     *
+     * @param {string} label       - Field label text
+     * @param {Node}   contentNode - Pre-built DOM node for the value
+     */
+    function makeFieldBlock(label, contentNode) {
+      const block = document.createElement("div");
+      block.className = "extracted-field";
+
+      const labelEl = document.createElement("div");
+      labelEl.className = "extracted-field-label";
+      labelEl.textContent = label;
+
+      block.appendChild(labelEl);
+      block.appendChild(contentNode);
+      return block;
+    }
+
+    /**
+     * Creates a <ul> bullet list from an array of strings.
+     * Each item is rendered via textContent — safe against XSS.
+     *
+     * @param {string[]} items
+     */
+    function makeBulletList(items) {
+      if (!items || items.length === 0) {
+        const note = document.createElement("p");
+        note.className = "empty-list-note";
+        note.textContent = "No items to highlight.";
+        return note;
+      }
+
+      const ul = document.createElement("ul");
+      ul.className = "item-list";
+
+      items.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item; // Safe
+        ul.appendChild(li);
+      });
+
+      return ul;
+    }
+
+    /**
+     * Creates a list of commitment sub-cards from an array of commitment objects.
+     * Each commitment has `what`, `due_date`, and `status`.
+     *
+     * @param {object[]} commitments
+     */
+    function makeCommitmentList(commitments) {
+      if (!commitments || commitments.length === 0) {
+        const note = document.createElement("p");
+        note.className = "empty-list-note";
+        note.textContent = "No commitments recorded.";
+        return note;
+      }
+
+      const wrapper = document.createElement("div");
+      wrapper.style.display = "flex";
+      wrapper.style.flexDirection = "column";
+      wrapper.style.gap = "0.5rem";
+
+      commitments.forEach(commit => {
+        const card = document.createElement("div");
+        card.className = "commitment-item";
+
+        // What
+        const whatEl = document.createElement("div");
+        whatEl.className = "commit-what";
+        whatEl.textContent = commit.what || "—";
+        card.appendChild(whatEl);
+
+        // Due date + status
+        const meta = document.createElement("div");
+        meta.className = "commit-meta";
+
+        if (commit.due_date) {
+          meta.textContent = "Due: " + commit.due_date + "  ";
+        }
+
+        if (commit.status) {
+          const statusBadge = document.createElement("span");
+          statusBadge.className = "commit-status";
+          statusBadge.textContent = commit.status;
+
+          // Colour the badge based on status
+          const statusLower = commit.status.toLowerCase();
+          if (statusLower === "open") {
+            statusBadge.style.background = "rgba(79,142,247,0.15)";
+            statusBadge.style.color      = "var(--accent-blue)";
+          } else if (statusLower === "overdue") {
+            statusBadge.style.background = "rgba(248,113,113,0.15)";
+            statusBadge.style.color      = "var(--accent-red)";
+          } else if (statusLower === "done" || statusLower === "completed") {
+            statusBadge.style.background = "rgba(74,222,128,0.15)";
+            statusBadge.style.color      = "var(--accent-green)";
+          } else {
+            statusBadge.style.background = "rgba(139,92,246,0.15)";
+            statusBadge.style.color      = "var(--accent-violet)";
+          }
+
+          meta.appendChild(statusBadge);
+        }
+
+        card.appendChild(meta);
+        wrapper.appendChild(card);
+      });
+
+      return wrapper;
+    }
+
+    /**
+     * Creates a coloured pill showing a numeric sentiment score (−1 to +1).
+     *
+     * @param {number} score
+     */
+    function makeSentimentPill(score) {
+      const pill = document.createElement("span");
+      pill.className = "sentiment-pill";
+
+      const rounded = parseFloat(score).toFixed(2);
+      let label, bg, color;
+
+      if (score >= 0.5) {
+        label = "Positive";
+        bg    = "rgba(74,222,128,0.15)";
+        color = "var(--accent-green)";
+      } else if (score >= 0.1) {
+        label = "Mildly Positive";
+        bg    = "rgba(45,212,191,0.15)";
+        color = "var(--accent-teal)";
+      } else if (score > -0.1) {
+        label = "Neutral";
+        bg    = "rgba(139,92,246,0.15)";
+        color = "var(--accent-violet)";
+      } else if (score > -0.5) {
+        label = "Mildly Negative";
+        bg    = "rgba(245,158,11,0.15)";
+        color = "var(--accent-amber)";
+      } else {
+        label = "Negative";
+        bg    = "rgba(248,113,113,0.15)";
+        color = "var(--accent-red)";
+      }
+
+      pill.textContent      = rounded + " — " + label;
+      pill.style.background = bg;
+      pill.style.color      = color;
+      return pill;
+    }
+
+    /**
+     * Creates an empty-state block with an icon, title, and descriptive text.
+     *
+     * @param {string} icon
+     * @param {string} title
+     * @param {string} text
+     */
+    function makeEmptyState(icon, title, text) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "empty-state";
+
+      const iconEl = document.createElement("div");
+      iconEl.className = "empty-state-icon";
+      iconEl.setAttribute("aria-hidden", "true");
+      iconEl.textContent = icon;
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "empty-state-title";
+      titleEl.textContent = title;
+
+      const textEl = document.createElement("p");
+      textEl.className = "empty-state-text";
+      textEl.textContent = text; // Safe
+      textEl.style.maxWidth = "300px";
+      textEl.style.margin   = "0 auto";
+
+      wrapper.appendChild(iconEl);
+      wrapper.appendChild(titleEl);
+      wrapper.appendChild(textEl);
+      return wrapper;
+    }
+
+
+    // ================================================================
+    // UI HELPERS
+    // ================================================================
+
+    /**
+     * Shows a status message inside a given element.
+     * Uses textContent to safely render the message — no raw HTML injection.
+     *
+     * @param {HTMLElement} el   - The container element to write into.
+     * @param {string}      type - "success" | "error" | "info" | "warning"
+     * @param {string}      msg  - The message text.
+     */
+    function showStatus(el, type, msg) {
+      // Clear previous
+      el.innerHTML = "";
+
+      const icons = {
+        success: "✅",
+        error:   "❌",
+        info:    "⏳",
+        warning: "⚠️"
+      };
+
+      const div = document.createElement("div");
+      div.className = "status-msg status-" + type;
+
+      const iconSpan = document.createElement("span");
+      iconSpan.className = "status-msg-icon";
+      iconSpan.setAttribute("aria-hidden", "true");
+      iconSpan.textContent = icons[type] || "ℹ️";
+
+      const msgSpan = document.createElement("span");
+      msgSpan.textContent = msg; // Safe
+
+      div.appendChild(iconSpan);
+      div.appendChild(msgSpan);
+      el.appendChild(div);
+    }
+
+    /**
+     * Puts a button into (or out of) a loading state.
+     * Disables the button and shows a spinner while loading.
+     *
+     * @param {HTMLButtonElement} btn       - The button element.
+     * @param {string}            iconId    - ID of the icon span inside the button.
+     * @param {string}            textId    - ID of the text span inside the button.
+     * @param {boolean}           loading   - true = loading state, false = normal.
+     * @param {string}            loadingText - Text shown while loading.
+     * @param {string}            [normalIcon] - Icon to restore when not loading.
+     */
+    function setButtonLoading(btn, iconId, textId, loading, loadingText, normalIcon) {
+      const iconEl = document.getElementById(iconId);
+      const textEl = document.getElementById(textId);
+
+      if (loading) {
+        btn.disabled = true;
+        iconEl.innerHTML = ""; // Clear icon
+        // Create spinner safely
+        const spinner = document.createElement("span");
+        spinner.className = "spinner";
+        spinner.setAttribute("aria-hidden", "true");
+        iconEl.appendChild(spinner);
+        textEl.textContent = loadingText;
+      } else {
+        btn.disabled = false;
+        iconEl.innerHTML  = ""; // Clear spinner
+        iconEl.textContent = normalIcon || "";
+        textEl.textContent = loadingText; // loadingText is reused as the restore label here
+      }
+    }
+
+    /**
+     * Returns a plain text version of a string (safe for DOM insertion).
+     * Used to prevent XSS when injecting user-supplied names into messages.
+     *
+     * @param {string} str
+     */
+    function escapeText(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+      // Note: this is only used to build text for textContent, so it's
+      // belt-and-suspenders safety. textContent itself is already safe.
+    }
+
+    /**
+     * Returns a Promise that resolves after a short delay.
+     * Only used in DEMO_MODE to simulate a realistic response time
+     * without adding fake delays to real requests.
+     */
+    function fakeDemoDelay() {
+      return new Promise(resolve => setTimeout(resolve, 900));
+    }
+
+
+    // ================================================================
+    // BOOT
+    // ================================================================
+    init();
+  </script>
+
+</body>
+</html>
