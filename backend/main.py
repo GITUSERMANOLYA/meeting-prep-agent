@@ -71,7 +71,9 @@ def log_meeting(req: LogMeeting):
     except Exception as e:
         log.exception("retain failed")
         raise HTTPException(502, f"Saving to memory failed: {e}")
-    return {"status": "saved", "extracted": extracted}
+    
+    # Updated status string to match CONTRACT.md single source of truth
+    return {"status": "success", "extracted": extracted}
 
 
 @app.post("/prep-meeting")
@@ -101,4 +103,6 @@ def log_outcome(req: LogOutcome):
     except Exception as e:
         log.exception("log-outcome failed")
         raise HTTPException(502, f"Saving outcome failed: {e}")
-    return {"status": "saved"}
+        
+    # Updated status string to match CONTRACT.md single source of truth
+    return {"status": "success"}
