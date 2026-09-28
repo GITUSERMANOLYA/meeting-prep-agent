@@ -1,4 +1,5 @@
 import json
+import datetime
 import os
 import re
 
@@ -143,6 +144,9 @@ Rules:
 - critical_alerts = promises not delivered, missed follow-ups, urgent risks.
 - open_commitments = commitments still pending.
 - If something is not in the memory, leave it empty rather than guessing.
+- Use today's date to say how overdue a pending commitment is, but only when a due date is stated in the memory.
+- If a commitment was promised more than once, say how many times.
+- suggested_opener should address the most important critical alert or landmine first.
 - suggested_opener = one short sentence grounded in the memory.
 No extra keys, no commentary."""
 
@@ -157,12 +161,13 @@ def _no_history_brief() -> dict:
     }
 
 
-def brief(recalled: str) -> dict:
+def brief(recalled: str, today=None) -> dict:
     if not isinstance(recalled, str) or not recalled.strip():
         return _no_history_brief()
 
     recalled = _truncate(recalled.strip(), MAX_RECALL_CHARS)
-    data = _call_json(BRIEF_SYSTEM, f"Recalled memory:\n{recalled}")
+    today = today or datetime.date.today().isoformat()
+    data = _call_json(BRIEF_SYSTEM, f"Today's date: {today}\nRecalled memory:\n{recalled}")
 
     return {
         "critical_alerts": _str_list(data.get("critical_alerts")),
