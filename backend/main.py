@@ -7,8 +7,8 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-import llm      # noqa: E402  (#3)
-import memory   # noqa: E402  (#2)
+import llm      
+import memory   
 
 log = logging.getLogger("meeting-prep")
 app = FastAPI(title="Meeting Prep Agent")
