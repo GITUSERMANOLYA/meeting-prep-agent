@@ -83,7 +83,7 @@ def log_meeting(req: LogMeeting):
         log.exception("retain failed")
         raise HTTPException(502, f"Saving to memory failed: {e}")
     
-    return {"status": "success", "extracted": extracted}
+    return {"status": "saved", "extracted": extracted}
 
 
 @app.post("/prep-meeting")
@@ -113,4 +113,4 @@ def log_outcome(req: LogOutcome):
     except Exception as e:
         log.exception("log-outcome failed")
         raise HTTPException(502, f"Saving outcome failed: {e}")
-    return {"status": "success"}
+    return {"status": "saved"}
