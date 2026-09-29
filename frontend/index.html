@@ -1301,8 +1301,8 @@
         <label for="contactSelect" class="sr-only">Select contact</label>
         <select id="contactSelect" aria-label="Select a contact">
           <option value="">— Choose a contact —</option>
-          <option value="Sarah Chen">Sarah Chen</option>
-          <option value="John Miller">John Miller</option>
+          <option value="Sarah Jenkins">Sarah Jenkins</option>
+          <option value="Michael Chen">Michael Chen</option>
           <option value="Priya Sharma">Priya Sharma</option>
           <option value="__new__">+ Enter new contact…</option>
         </select>
@@ -2219,67 +2219,59 @@ Example:
      * @param {object[]} commitments
      */
     function makeCommitmentList(commitments) {
-      if (!commitments || commitments.length === 0) {
-        const note = document.createElement("p");
-        note.className = "empty-list-note";
-        note.textContent = "No commitments recorded.";
-        return note;
+  if (!commitments || commitments.length === 0) {
+    const note = document.createElement("p");
+    note.className = "empty-list-note";
+    note.textContent = "No commitments recorded.";
+    return note;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.flexDirection = "column";
+  wrapper.style.gap = "0.5rem";
+
+  commitments.forEach(commit => {
+    const card = document.createElement("div");
+    card.className = "commitment-item";
+
+    const whatEl = document.createElement("div");
+    whatEl.className = "commit-what";
+
+    // Extracted commitments are objects;
+    // open_commitments are strings.
+    const what =
+      typeof commit === "object"
+        ? commit.what
+        : String(commit);
+
+    whatEl.textContent = what || "—";
+    card.appendChild(whatEl);
+
+    // Extracted commitments may also contain due/status.
+    if (typeof commit === "object") {
+      const meta = document.createElement("div");
+      meta.className = "commit-meta";
+
+      if (commit.due) {
+        meta.textContent = "Due: " + commit.due + "  ";
       }
 
-      const wrapper = document.createElement("div");
-      wrapper.style.display = "flex";
-      wrapper.style.flexDirection = "column";
-      wrapper.style.gap = "0.5rem";
+      if (commit.status) {
+        const statusBadge = document.createElement("span");
+        statusBadge.className = "commit-status";
+        statusBadge.textContent = commit.status;
+        meta.appendChild(statusBadge);
+      }
 
-      commitments.forEach(commit => {
-        const card = document.createElement("div");
-        card.className = "commitment-item";
-
-        // What
-        const whatEl = document.createElement("div");
-        whatEl.className = "commit-what";
-        whatEl.textContent = commit.what || "—";
-        card.appendChild(whatEl);
-
-        // Due date + status
-        const meta = document.createElement("div");
-        meta.className = "commit-meta";
-
-        if (commit.due_date) {
-          meta.textContent = "Due: " + commit.due_date + "  ";
-        }
-
-        if (commit.status) {
-          const statusBadge = document.createElement("span");
-          statusBadge.className = "commit-status";
-          statusBadge.textContent = commit.status;
-
-          // Colour the badge based on status
-          const statusLower = commit.status.toLowerCase();
-          if (statusLower === "open") {
-            statusBadge.style.background = "rgba(79,142,247,0.15)";
-            statusBadge.style.color      = "var(--accent-blue)";
-          } else if (statusLower === "overdue") {
-            statusBadge.style.background = "rgba(248,113,113,0.15)";
-            statusBadge.style.color      = "var(--accent-red)";
-          } else if (statusLower === "done" || statusLower === "completed") {
-            statusBadge.style.background = "rgba(74,222,128,0.15)";
-            statusBadge.style.color      = "var(--accent-green)";
-          } else {
-            statusBadge.style.background = "rgba(139,92,246,0.15)";
-            statusBadge.style.color      = "var(--accent-violet)";
-          }
-
-          meta.appendChild(statusBadge);
-        }
-
-        card.appendChild(meta);
-        wrapper.appendChild(card);
-      });
-
-      return wrapper;
+      card.appendChild(meta);
     }
 
+    wrapper.appendChild(card);
+  });
+
+  return wrapper;
+}
     /**
      * Creates a coloured pill showing a numeric sentiment score (−1 to +1).
      *
